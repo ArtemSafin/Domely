@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS task_history;
+DROP TABLE IF EXISTS reminder_rules;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS house_members;
+DROP TABLE IF EXISTS houses;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS reminder_strategy;
+DROP TYPE IF EXISTS task_priority;
+DROP TYPE IF EXISTS task_type;
