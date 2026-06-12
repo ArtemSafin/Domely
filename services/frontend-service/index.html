@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#1a1410" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Homie</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Fraunces:ital,wght@0,300;0,400;1,300&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:     #1a1410;
+      --bg-surface:  #221c16;
+      --bg-raised:   #2c241c;
+      --bg-hover:    #342b22;
+      --amber:       #e8a050;
+      --amber-dim:   #b87830;
+      --amber-glow:  rgba(232, 160, 80, 0.12);
+      --text-primary: #f0e6d8;
+      --text-secondary: #9e8e7e;
+      --text-muted:  #6b5e52;
+      --border:      rgba(232, 160, 80, 0.12);
+      --border-hover: rgba(232, 160, 80, 0.28);
+      --red:    #e05050;
+      --yellow: #e8c050;
+      --green:  #70b870;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    html, body, #root { height: 100%; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+    /* Auth screen */
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(232,160,80,0.08) 0%, transparent 70%);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 32px;
+    }
+
+    .auth-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: var(--amber);
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .auth-tagline {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 24px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: calc(var(--radius-sm) - 2px);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .auth-tab.active {
+      background: var(--bg-raised);
+      color: var(--text-primary);
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus { border-color: var(--amber-dim); }
+    .field input::placeholder { color: var(--text-muted); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: var(--amber);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #1a1410;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .error-msg {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* App layout */
+    .app-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--amber);
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--amber-glow);
+      border: 1px solid var(--border-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--amber);
+      font-weight: 500;
+    }
+
+    .btn-ghost {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* House selector */
+    .house-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .house-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .house-chip.active {
+      background: var(--amber-glow);
+      border-color: var(--amber-dim);
+      color: var(--amber);
+    }
+
+    .house-chip:hover:not(.active) {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-new-house {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px dashed var(--text-muted);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-new-house:hover {
+      border-color: var(--amber-dim);
+      color: var(--amber);
+    }
+
+    /* Section header */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: var(--amber-glow);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-sm);
+      color: var(--amber);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-add:hover {
+      background: rgba(232, 160, 80, 0.2);
+    }
+
+    /* Task card */
+    .task-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .task-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      transition: border-color 0.15s, background 0.15s;
+      cursor: default;
+    }
+
+    .task-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-raised);
+    }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover { border-color: var(--border-hover); color: var(--text-primary); }
+    .btn-icon.done:hover { border-color: var(--green); color: var(--green); }
+    .btn-icon.del:hover { border-color: var(--red); color: var(--red); }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .badge-high   { background: rgba(224,80,80,0.12);  color: var(--red);    border-color: rgba(224,80,80,0.2);  }
+    .badge-normal { background: rgba(232,192,80,0.12); color: var(--yellow); border-color: rgba(232,192,80,0.2); }
+    .badge-low    { background: rgba(112,184,112,0.12);color: var(--green);  border-color: rgba(112,184,112,0.2);}
+    .badge-type   { background: var(--bg-base); color: var(--text-muted); border-color: var(--border); }
+    .badge-date   { background: var(--bg-base); color: var(--text-secondary); border-color: var(--border); font-size: 11px; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-title { font-size: 15px; color: var(--text-secondary); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 8, 6, 0.75);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      padding: 0;
+    }
+
+    @media (min-width: 500px) {
+      .modal-backdrop { align-items: center; padding: 20px; }
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @media (min-width: 500px) {
+      .modal { border-radius: var(--radius); }
+    }
+
+    .modal-title {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .select-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .select-chip {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .select-chip.active {
+      background: var(--amber-glow);
+      border-color: var(--amber-dim);
+      color: var(--amber);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-cancel:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+    .btn-submit {
+      flex: 2;
+      padding: 11px;
+      background: var(--amber);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #1a1410;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-submit:hover { opacity: 0.88; }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Loading */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-size: 13px;
+      color: var(--text-primary);
+      z-index: 200;
+      animation: toastIn 0.2s ease;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const API_AUTH = 'http://192.168.0.253:8081';
+    const API_TASK = 'http://192.168.0.253:8080';
+
+    // ── helpers ──────────────────────────────────────────────
+    function getToken() { return localStorage.getItem('homie_token'); }
+    function setToken(t) { localStorage.setItem('homie_token', t); }
+    function clearToken() { localStorage.removeItem('homie_token'); }
+    function getUserData() {
+      try { return JSON.parse(localStorage.getItem('homie_user') || 'null'); } catch { return null; }
+    }
+    function setUserData(d) { localStorage.setItem('homie_user', JSON.stringify(d)); }
+
+    async function apiFetch(base, path, opts = {}) {
+      const token = getToken();
+      const res = await fetch(`${base}${path}`, {
+        ...opts,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(opts.headers || {}),
+        },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    function priorityLabel(p) {
+      return { high: '🔴 Высокий', normal: '🟡 Обычный', low: '🟢 Низкий' }[p] || p;
+    }
+    function priorityClass(p) {
+      return { high: 'badge-high', normal: 'badge-normal', low: 'badge-low' }[p] || 'badge-normal';
+    }
+    function typeLabel(t) {
+      return t === 'recurring' ? '🔁 Повтор' : '1️⃣ Разовая';
+    }
+    function formatDate(d) {
+      if (!d) return null;
+      return new Date(d).toLocaleString('ru-RU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ── Toast ─────────────────────────────────────────────────
+    function Toast({ msg }) {
+      return <div className="toast">{msg}</div>;
+    }
+
+    // ── Auth ──────────────────────────────────────────────────
+    function AuthScreen({ onAuth }) {
+      const [tab, setTab] = useState('login');
+      const [form, setForm] = useState({ telegram_id: '', name: '', password: '' });
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handle = async () => {
+        setError(''); setLoading(true);
+        try {
+          const body = tab === 'login'
+            ? { telegram_id: Number(form.telegram_id), password: form.password }
+            : { telegram_id: Number(form.telegram_id), name: form.name, password: form.password };
+          const data = await apiFetch(API_AUTH, `/auth/${tab}`, {
+            method: 'POST', body: JSON.stringify(body),
+          });
+          setToken(data.access_token);
+          setUserData({ id: data.user_id, name: data.name });
+          onAuth();
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="auth-wrap">
+          <div className="auth-card">
+            <div className="auth-logo">Homie</div>
+            <div className="auth-tagline">Домашние дела под контролем</div>
+
+            <div className="auth-tabs">
+              <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Войти</button>
+              <button className={`auth-tab ${tab === 'register' ? 'active' : ''}`} onClick={() => setTab('register')}>Регистрация</button>
+            </div>
+
+            <div className="field">
+              <label>Telegram ID</label>
+              <input type="number" placeholder="123456789"
+                value={form.telegram_id}
+                onChange={e => setForm(f => ({...f, telegram_id: e.target.value}))} />
+            </div>
+
+            {tab === 'register' && (
+              <div className="field">
+                <label>Имя</label>
+                <input type="text" placeholder="Артём"
+                  value={form.name}
+                  onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+              </div>
+            )}
+
+            <div className="field">
+              <label>Пароль</label>
+              <input type="password" placeholder="••••••••"
+                value={form.password}
+                onChange={e => setForm(f => ({...f, password: e.target.value}))}
+                onKeyDown={e => e.key === 'Enter' && handle()} />
+            </div>
+
+            <button className="btn-primary" onClick={handle} disabled={loading}>
+              {loading ? <span className="spinner" /> : (tab === 'login' ? 'Войти' : 'Создать аккаунт')}
+            </button>
+
+            {error && <div className="error-msg">{error}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Add Task Modal ────────────────────────────────────────
+    function AddTaskModal({ houseId, userId, onClose, onAdded }) {
+      const [form, setForm] = useState({
+        title: '',
+        task_type: 'one_time',
+        priority: 'normal',
+        reminder_strategy: 'simple',
+        due_at: '',
+        interval_days: '',
+      });
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const submit = async () => {
+        setError(''); setLoading(true);
+        try {
+          const body = {
+            house_id: houseId,
+            created_by: userId,
+            title: form.title,
+            task_type: form.task_type,
+            priority: form.priority,
+            reminder_strategy: form.reminder_strategy,
+          };
+          if (form.due_at) body.due_at = new Date(form.due_at).toISOString();
+          if (form.task_type === 'recurring' && form.interval_days)
+            body.interval_days = Number(form.interval_days);
+          await apiFetch(API_TASK, '/tasks', { method: 'POST', body: JSON.stringify(body) });
+          onAdded();
+          onClose();
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const C = ({ val, active, onClick, children }) => (
+        <button className={`select-chip ${active ? 'active' : ''}`} onClick={onClick}>{children}</button>
+      );
+
+      return (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+          <div className="modal">
+            <div className="modal-title">Новая задача</div>
+
+            <div className="field">
+              <label>Название</label>
+              <input type="text" placeholder="Поменять фильтр воды"
+                value={form.title}
+                onChange={e => setForm(f => ({...f, title: e.target.value}))}
+                autoFocus />
+            </div>
+
+            <div className="field">
+              <label>Тип</label>
+              <div className="select-row">
+                {[['one_time', '1️⃣ Разовая'], ['recurring', '🔁 Повторяющаяся']].map(([v, l]) => (
+                  <C key={v} active={form.task_type === v} onClick={() => setForm(f => ({...f, task_type: v}))}>{l}</C>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Приоритет</label>
+              <div className="select-row">
+                {[['low', '🟢 Низкий'], ['normal', '🟡 Обычный'], ['high', '🔴 Высокий']].map(([v, l]) => (
+                  <C key={v} active={form.priority === v} onClick={() => setForm(f => ({...f, priority: v}))}>{l}</C>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Напоминание</label>
+              <div className="select-row">
+                {[['simple', '🔔 Простое'], ['advance', '📅 За день'], ['meeting', '🤝 Встреча']].map(([v, l]) => (
+                  <C key={v} active={form.reminder_strategy === v} onClick={() => setForm(f => ({...f, reminder_strategy: v}))}>{l}</C>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Дата и время</label>
+              <input type="datetime-local"
+                value={form.due_at}
+                onChange={e => setForm(f => ({...f, due_at: e.target.value}))}
+                style={{ colorScheme: 'dark' }} />
+            </div>
+
+            {form.task_type === 'recurring' && (
+              <div className="field">
+                <label>Повторять каждые (дней)</label>
+                <input type="number" placeholder="30"
+                  value={form.interval_days}
+                  onChange={e => setForm(f => ({...f, interval_days: e.target.value}))} />
+              </div>
+            )}
+
+            {error && <div className="error-msg" style={{textAlign:'left', marginBottom: 8}}>{error}</div>}
+
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={onClose}>Отмена</button>
+              <button className="btn-submit" onClick={submit} disabled={loading || !form.title}>
+                {loading ? <span className="spinner" /> : 'Создать задачу'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── New House Modal ───────────────────────────────────────
+    function NewHouseModal({ userId, onClose, onCreated }) {
+      const [name, setName] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const submit = async () => {
+        if (!name.trim()) return;
+        setLoading(true);
+        try {
+          await apiFetch(API_TASK, '/houses', {
+            method: 'POST',
+            body: JSON.stringify({ name: name.trim(), owner_id: userId }),
+          });
+          onCreated();
+          onClose();
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+          <div className="modal">
+            <div className="modal-title">Новый дом</div>
+            <div className="field">
+              <label>Название</label>
+              <input type="text" placeholder="Мой дом" value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && submit()}
+                autoFocus />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={onClose}>Отмена</button>
+              <button className="btn-submit" onClick={submit} disabled={loading || !name.trim()}>
+                {loading ? <span className="spinner" /> : 'Создать'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Main App ──────────────────────────────────────────────
+    function App() {
+      const [authed, setAuthed] = useState(!!getToken());
+      const [user, setUser] = useState(getUserData());
+      const [houses, setHouses] = useState([]);
+      const [activeHouse, setActiveHouse] = useState(null);
+      const [tasks, setTasks] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [showAddTask, setShowAddTask] = useState(false);
+      const [showNewHouse, setShowNewHouse] = useState(false);
+      const [toast, setToast] = useState('');
+
+      const showToast = (msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(''), 2500);
+      };
+
+      const loadHouses = useCallback(async () => {
+        if (!user) return;
+        try {
+          const data = await apiFetch(API_TASK, `/houses/user/${user.id}`);
+          setHouses(data || []);
+          if (data && data.length > 0 && !activeHouse) {
+            setActiveHouse(data[0]);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, [user]);
+
+      const loadTasks = useCallback(async () => {
+        if (!activeHouse) return;
+        setLoading(true);
+        try {
+          const data = await apiFetch(API_TASK, `/tasks/house/${activeHouse.id}`);
+          setTasks(data || []);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      }, [activeHouse]);
+
+      useEffect(() => { if (authed) loadHouses(); }, [authed]);
+      useEffect(() => { if (activeHouse) loadTasks(); }, [activeHouse]);
+
+      const handleAuth = () => {
+        setAuthed(true);
+        setUser(getUserData());
+      };
+
+      const handleLogout = () => {
+        clearToken();
+        localStorage.removeItem('homie_user');
+        setAuthed(false);
+        setUser(null);
+        setHouses([]);
+        setTasks([]);
+        setActiveHouse(null);
+      };
+
+      const completeTask = async (taskId) => {
+        try {
+          await apiFetch(API_TASK, `/tasks/${taskId}/complete`, {
+            method: 'POST',
+            body: JSON.stringify({ completed_by: user.id }),
+          });
+          showToast('✅ Задача выполнена');
+          loadTasks();
+        } catch (e) {
+          showToast('Ошибка: ' + e.message);
+        }
+      };
+
+      const deleteTask = async (taskId) => {
+        try {
+          await apiFetch(API_TASK, `/tasks/${taskId}`, { method: 'DELETE' });
+          showToast('🗑 Задача удалена');
+          loadTasks();
+        } catch (e) {
+          showToast('Ошибка: ' + e.message);
+        }
+      };
+
+      if (!authed) return <AuthScreen onAuth={handleAuth} />;
+
+      return (
+        <div className="app-layout">
+          <header className="app-header">
+            <div className="header-logo">Homie</div>
+            <div className="header-user">
+              <div className="avatar">{user?.name?.[0]?.toUpperCase() || '?'}</div>
+              <button className="btn-ghost" onClick={handleLogout}>Выйти</button>
+            </div>
+          </header>
+
+          <main className="app-content">
+            {/* House selector */}
+            <div className="house-bar">
+              {houses.map(h => (
+                <button
+                  key={h.id}
+                  className={`house-chip ${activeHouse?.id === h.id ? 'active' : ''}`}
+                  onClick={() => setActiveHouse(h)}
+                >
+                  🏠 {h.name}
+                </button>
+              ))}
+              <button className="btn-new-house" onClick={() => setShowNewHouse(true)}>+ Дом</button>
+            </div>
+
+            {activeHouse ? (
+              <>
+                <div className="section-header">
+                  <span className="section-title">Задачи</span>
+                  <button className="btn-add" onClick={() => setShowAddTask(true)}>
+                    + Добавить
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="loading-wrap"><div className="spinner" /></div>
+                ) : tasks.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">🏡</div>
+                    <div className="empty-title">Задач пока нет</div>
+                    <div className="empty-sub">Добавьте первую задачу для этого дома</div>
+                  </div>
+                ) : (
+                  <div className="task-list">
+                    {tasks.map(t => (
+                      <div key={t.id} className="task-card">
+                        <div className="task-top">
+                          <div className="task-title">{t.title}</div>
+                          <div className="task-actions">
+                            <button className="btn-icon done" onClick={() => completeTask(t.id)} title="Выполнено">✓</button>
+                            <button className="btn-icon del" onClick={() => deleteTask(t.id)} title="Удалить">×</button>
+                          </div>
+                        </div>
+                        <div className="task-meta">
+                          <span className={`badge ${priorityClass(t.priority)}`}>{priorityLabel(t.priority)}</span>
+                          <span className="badge badge-type">{typeLabel(t.task_type)}</span>
+                          {t.due_at && <span className="badge badge-date">📅 {formatDate(t.due_at)}</span>}
+                          {t.interval_days && <span className="badge badge-type">↻ каждые {t.interval_days} дн.</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">🏠</div>
+                <div className="empty-title">Добавьте свой первый дом</div>
+                <div className="empty-sub">Нажмите «+ Дом» чтобы начать</div>
+              </div>
+            )}
+          </main>
+
+          {showAddTask && activeHouse && (
+            <AddTaskModal
+              houseId={activeHouse.id}
+              userId={user.id}
+              onClose={() => setShowAddTask(false)}
+              onAdded={loadTasks}
+            />
+          )}
+
+          {showNewHouse && (
+            <NewHouseModal
+              userId={user.id}
+              onClose={() => setShowNewHouse(false)}
+              onCreated={() => { loadHouses(); }}
+            />
+          )}
+
+          {toast && <Toast msg={toast} />}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

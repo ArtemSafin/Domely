@@ -69,6 +69,15 @@ services:
         condition: service_healthy
       task-service:
         condition: service_healthy
+  
+  frontend-service:
+    image: frontend-service:latest
+    build:
+      context: .
+      dockerfile: services/frontend-service/Dockerfile
+    container_name: frontend-service
+    ports:
+     - "3001:80"
 
 volumes:
   pgdata:

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/ArtemSafin/Domely/services/task-service/internal/model"
 	"github.com/ArtemSafin/Domely/services/task-service/internal/service"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -21,6 +21,7 @@ func New(svc *service.TaskService) *Handler {
 
 func (h *Handler) Routes() chi.Router {
 	r := chi.NewRouter()
+	r.Use(corsMiddleware)
 	r.Get("/health", h.health)
 	r.Post("/users", h.createUser)
 	r.Get("/users/telegram/{telegramID}", h.getUserByTelegramID)
@@ -291,4 +292,17 @@ func respond(w http.ResponseWriter, status int, data interface{}) {
 
 func respondError(w http.ResponseWriter, status int, msg string) {
 	respond(w, status, map[string]string{"error": msg})
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
