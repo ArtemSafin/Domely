@@ -10,15 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ArtemSafin/Domely/services/task-service/internal/config"
-	"github.com/ArtemSafin/Domely/services/task-service/internal/handler"
-	"github.com/ArtemSafin/Domely/services/task-service/internal/repository"
-	"github.com/ArtemSafin/Domely/services/task-service/internal/service"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/ArtemSafin/Domely/services/auth-service/internal/config"
+	"github.com/ArtemSafin/Domely/services/auth-service/internal/handler"
+	"github.com/ArtemSafin/Domely/services/auth-service/internal/repository"
+	"github.com/ArtemSafin/Domely/services/auth-service/internal/service"
 )
 
 func main() {
@@ -33,16 +30,23 @@ func main() {
 	}
 	defer db.Close()
 
-	db.SetMaxOpenConns(25)
+	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	if err := runMigrations(cfg.DatabaseURL); err != nil {
-		log.Fatalf("migrations: %v", err)
+	// создаём таблицу credentials если не существует
+	if err := runMigration(db); err != nil {
+		log.Fatalf("migration: %v", err)
 	}
 
-	repo := repository.NewTaskRepository(db)
-	svc := service.NewTaskService(repo)
+	repo := repository.New(db)
+
+	jwtExpiry, err := time.ParseDuration(cfg.JWTExpiry)
+	if err != nil {
+		log.Fatalf("invalid JWT_EXPIRY: %v", err)
+	}
+
+	svc := service.New(repo, cfg.JWTSecret, jwtExpiry)
 	h := handler.New(svc)
 
 	srv := &http.Server{
@@ -57,7 +61,7 @@ func main() {
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("task-service listening on :%s", cfg.HTTPPort)
+		log.Printf("auth-service listening on :%s", cfg.HTTPPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %v", err)
 		}
@@ -75,15 +79,14 @@ func main() {
 	log.Println("stopped")
 }
 
-func runMigrations(databaseURL string) error {
-	m, err := migrate.New("file://migrations/postgres", databaseURL)
-	if err != nil {
-		return fmt.Errorf("create migrate: %w", err)
-	}
-	defer m.Close()
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("migrate up: %w", err)
-	}
-	log.Println("migrations applied")
-	return nil
+func runMigration(db *sqlx.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS credentials (
+			id           UUID PRIMARY KEY,
+			user_id      UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+			password_hash TEXT NOT NULL,
+			created_at   TIMESTAMP NOT NULL DEFAULT NOW()
+		)
+	`)
+	return err
 }
