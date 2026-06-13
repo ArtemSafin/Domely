@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap
+  namespace: homie
+data:
+  HTTP_PORT: "8080"

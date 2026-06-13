@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: task-service
+  tag: latest
+  pullPolicy: ifNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+env:
+  HTTP_PORT: "8080"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
