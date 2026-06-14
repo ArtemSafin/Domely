@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: scheduler-service
+  repository: 192.168.0.253:5050/task-service
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 env:
   TASK_SERVICE_URL: "http://task-service:8080"
