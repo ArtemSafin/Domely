@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+  namespace: homie
+data:
+  HTTP_PORT: {{ .Values.env.HTTP_PORT | quote }}

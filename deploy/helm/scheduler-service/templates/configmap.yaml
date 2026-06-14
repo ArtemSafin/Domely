@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  namespace: homie
+data:
+  TASK_SERVICE_URL: {{ .Values.env.TASK_SERVICE_URL | quote }}
+  REDIS_URL: {{ .Values.env.REDIS_URL | quote }}
+  CRON_SCHEDULE: {{ .Values.env.CRON_SCHEDULE | quote }}

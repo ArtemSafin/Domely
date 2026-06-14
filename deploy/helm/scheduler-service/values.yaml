@@ -1,0 +1,19 @@
+replicaCount: 1
+
+image:
+  repository: scheduler-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  TASK_SERVICE_URL: "http://task-service:8080"
+  REDIS_URL: "redis://192.168.0.253:6379"
+  CRON_SCHEDULE: "* * * * *"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi

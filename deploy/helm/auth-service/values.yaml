@@ -1,16 +1,22 @@
 replicaCount: 1
 
 image:
-  repository: task-service
+  repository: auth-service
   tag: latest
   pullPolicy: IfNotPresent
 
 service:
-  type: ClusterIP
-  port: 8080
+  type: NodePort
+  port: 8081
+  nodePort: 30081
 
 env:
-  HTTP_PORT: "8080"
+  HTTP_PORT: "8081"
+  JWT_EXPIRY: "24h"
+
+secret:
+  databaseUrl: ""
+  jwtSecret: ""
 
 resources:
   requests:
