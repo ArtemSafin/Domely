@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/ArtemSafin/Domely.git
     targetRevision: main
-    path: deploy/helm/fontend-service
+    path: deploy/helm/frontend-service
     helm:
       valueFiles:
         - values.yaml
